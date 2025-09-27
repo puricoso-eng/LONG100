@@ -45,9 +45,7 @@
   </style>
 
   <!-- Analytics (choose one and update domain/server) -->
-  <!-- Plausible (recommended, cookieless). Replace long100.app with your domain -->
-  <!-- <script defer data-domain="long100.app" src="https://plausible.io/js/script.js"></script> -->
-  <!-- Umami (self-hosted or cloud). Replace with your Umami script URL and data-website-id -->
+  <!-- <script defer data-domain="longevity100.app" src="https://plausible.io/js/script.js"></script> -->
   <!-- <script async defer data-website-id="YOUR-UMAMI-WEBSITE-ID" src="https://your-umami-server.com/script.js"></script> -->
 
   <!-- Favicons -->
@@ -329,8 +327,8 @@
       let total=0; breakdown.forEach(b=>b.items.forEach(i=>total+=i.pts));
       total = clamp(total,0,100);
 
-      // Main score UI
-      $('totalVal')?.textContent = total.toFixed(0);
+      // Main score UI (no optional-chaining on left-hand side)
+      const totalValEl = $('totalVal'); if (totalValEl) totalValEl.textContent = total.toFixed(0);
       const label = labelForScore(total);
       const color = colorForScore(total);
       const statusPill = $('statusPill'); if (statusPill) { statusPill.textContent = label; statusPill.style.color = color; statusPill.style.borderColor = color; }
@@ -350,8 +348,8 @@
       }
 
       const now=new Date();
-      $('datePill')?.textContent = now.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
-      $('unitsPill')?.textContent = `Units: ${$('units')?.value || 'kg'}`;
+      const datePillEl = $('datePill'); if (datePillEl) datePillEl.textContent = now.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+      const unitsEl = $('units'); const unitsPillEl = $('unitsPill'); if (unitsPillEl) unitsPillEl.textContent = `Units: ${(unitsEl && unitsEl.value) || 'kg'}`;
     };
 
     // Auto-recalc on any input change (null-safe)
