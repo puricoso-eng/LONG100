@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LONG100 – Garmin Longevity Score</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="description" content="Weekly health & longevity score from your Garmin metrics. Installable PWA, offline-ready, customizable thresholds, optional body composition.">
+  <!-- Google AdSense: paste your client ID below and uncomment
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  -->
+  <style>
+    :root {{ --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --accent:#60a5fa; --good:#22c55e; --warn:#f59e0b; --risk:#ef4444; --border:#374151; }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:linear-gradient(180deg,#0b1220,var(--bg)); color:var(--text); }}
+    header {{ padding:22px 14px 4px; text-align:center; }}
+    header h1 {{ margin:0; font-size:26px; letter-spacing:.3px; }}
+    header p {{ margin:6px 0 0; color:var(--muted); font-size:14px; }}
+    .container {{ max-width:980px; margin:0 auto; padding:14px; }}
+    .grid {{ display:grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap:14px; }}
+    .card {{ background: rgba(17,24,39,.7); border:1px solid var(--border); border-radius:12px; padding:12px; backdrop-filter: blur(6px); }}
+    .card h2 {{ margin:0 0 8px; font-size:16px; color:var(--accent); }}
+    label {{ display:block; font-size:13px; color:var(--muted); margin:10px 0 6px; }}
+    input[type="number"], select {{ width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:#0b1020; color:var(--text); }}
+    .row {{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }}
+    .hint {{ font-size:12px; color:var(--muted); margin-top:4px; }}
+    .score-card {{ display:grid; gap:8px; }}
+    .total {{ display:flex; align-items:center; justify-content:space-between; padding:14px; border-radius:12px; border:1px solid var(--border); background:#0a0f1d; }}
+    .total h3 {{ margin:0; font-size:18px; }}
+    .total .value {{ font-size:28px; font-weight:700; }}
+    .bar {{ height:12px; width:100%; background:#0b1020; border:1px solid var(--border); border-radius:999px; overflow:hidden; margin-top:8px; }}
+    .bar > div {{ height:100%; width:0%; transition:width 300ms ease; }}
+    .pill {{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); background:#0b1020; color:var(--muted); }}
+    .flex {{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }}
+    .breakdown {{ display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:10px; }}
+    .kpi {{ border:1px solid var(--border); border-radius:10px; padding:10px; background:#0a0f1d; }}
+    .btn {{ padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:#0b1020; color:var(--text); cursor:pointer; }}
+    .btn-group {{ display:flex; gap:10px; flex-wrap:wrap; }}
+    .ad {{ display:block; width:100%; min-height:60px; border:1px dashed var(--border); border-radius:8px; padding:8px; text-align:center; color:var(--muted); }}
+    footer {{ text-align:center; color:var(--muted); font-size:12px; padding:16px; }}
+    a {{ color: var(--accent); }}
+  </style>
+
+  <!-- Analytics (choose one and update domain/server) -->
+  <!-- Plausible (recommended, cookieless). Replace long100.app with your domain -->
+  <!-- <script defer data-domain="long100.app" src="https://plausible.io/js/script.js"></script> -->
+
+  <!-- Umami (self-hosted or cloud). Replace with your Umami script URL and data-website-id -->
+  <!-- <script async defer data-website-id="YOUR-UMAMI-WEBSITE-ID" src="https://your-umami-server.com/script.js"></script> -->
+
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" sizes="16x16" href="../icons/icon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="../icons/icon-48.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../icons/icon-180.png">
+
+</head>
+<body>
+  <header>
+    <h1>LONG100 – Garmin Longevity Score</h1>
+    <p>Weekly snapshot from your Garmin metrics. Installable • Offline-ready • Custom thresholds & body-comp.</p>
+  </header>
+  <div class="container">
+
+    <div class="card">
+      <h2>Settings & Baselines</h2>
+      <div class="grid">
+        <div>
+          <label>Brand</label>
+          <select id="brand">
+            <option value="garmin">Garmin</option>
+            <option value="apple">Apple Watch</option>
+            <option value="fitbit">Fitbit</option>
+            <option value="samsung">Samsung</option>
+            <option value="coros">COROS</option>
+            <option value="polar">Polar</option>
+            <option value="whoop">WHOOP</option>
+            <option value="other">Other</option>
+          </select>
+          <div class="hint">Brand used for labels/help only. Scoring is device‑agnostic.</div>
+        </div>
+      <div class="grid">
+        <div>
+          <label>Age</label>
+          <input id="age" type="number" placeholder="e.g., 40">
+        </div>
+        <div>
+          <label>Sex</label>
+          <select id="sex"><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select>
+        </div>
+        <div>
+          <label>RHR Baseline (bpm)</label>
+          <input id="rhr_base" type="number" placeholder="e.g., best recent 7-day avg">
+          <div class="hint">Used to score RHR relative to your norm.</div>
+        </div>
+        <div>
+          <label>HRV Baseline (ms)</label>
+          <input id="hrv_base" type="number" placeholder="e.g., typical 7-day avg">
+          <div class="hint">Weekly HRV is scored vs this baseline.</div>
+        </div>
+        <div>
+          <label>Weight Units</label>
+          <select id="units"><option value="kg">kg</option><option value="lb">lb</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:14px;">
+      <div class="card">
+        <h2>1) Recovery & Baseline Health</h2>
+        <label>Resting HR (bpm)</label>
+        <input id="rhr" type="number" inputmode="decimal" placeholder="e.g., 58" />
+        <div class="hint">Scores vs your baseline if set; otherwise absolute ranges.</div>
+        <label>HRV (ms, weekly avg)</label>
+        <input id="hrv" type="number" inputmode="decimal" placeholder="e.g., 70" />
+        <div class="hint">Compared to your HRV baseline.</div>
+      </div>
+
+      <div class="card">
+        <h2>2) Cardiorespiratory Fitness</h2>
+        <label>VO₂ Max percentile</label>
+        <input id="vo2pct" type="number" inputmode="decimal" placeholder="e.g., 78" />
+        <div class="hint">≥75th = 10 pts; 25–74th = 7 pts; <25th = 4 pts.</div>
+        <label>Training Load Status</label>
+        <select id="load">
+          <option value="productive">Productive</option>
+          <option value="maintaining">Maintaining</option>
+          <option value="other">Overreaching / Detraining</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <h2>3) Movement & Activity</h2>
+        <label>Avg Steps / day</label>
+        <input id="steps" type="number" inputmode="decimal" placeholder="e.g., 9000" />
+        <div class="hint">≥8000 = 10 pts; 5000–7999 = 7 pts; <5000 = 4 pts.</div>
+        <label>Intensity Minutes (weekly)</label>
+        <input id="intmin" type="number" inputmode="decimal" placeholder="e.g., 165" />
+        <div class="hint">≥150 mod or ≥75 vigorous = 10 pts.</div>
+      </div>
+
+      <div class="card">
+        <h2>4) Sleep & Recovery Quality</h2>
+        <label>Total sleep (hours, avg)</label>
+        <input id="sleep" type="number" inputmode="decimal" step="0.1" placeholder="e.g., 7.4" />
+        <div class="hint">7–8 hrs = 10 pts; 6–6.9 = 7 pts; <6 = 4 pts.</div>
+        <label>Deep sleep (%)</label>
+        <input id="deep" type="number" inputmode="decimal" step="0.1" placeholder="e.g., 18" />
+        <div class="hint">15–25% = 10 pts; 10–14.9 = 7 pts; <10% = 4 pts.</div>
+      </div>
+
+      <div class="card">
+        <h2>5) Lifestyle, Stress & Body-Comp</h2>
+        <details>
+          <summary>Use Body Composition instead of Body Battery (optional)</summary>
+          <div class="row" style="margin-top:8px;">
+            <div>
+              <label>Weight</label>
+              <input id="weight" type="number" inputmode="decimal" placeholder="e.g., 86">
+            </div>
+            <div>
+              <label>Body Fat %</label>
+              <input id="bodyfat" type="number" inputmode="decimal" placeholder="e.g., 19">
+            </div>
+          </div>
+          <div class="hint">If Body Fat % is provided, Lifestyle uses Stress + Body Fat; otherwise Stress + Body Battery.</div>
+        </details>
+        <label>Stress score (daily avg)</label>
+        <input id="stress" type="number" inputmode="decimal" placeholder="e.g., 28" />
+        <div class="hint"><35 = 10 pts; 35–49 = 7 pts; ≥50 = 4 pts.</div>
+        <label>Body Battery (end-of-day avg)</label>
+        <input id="battery" type="number" inputmode="decimal" placeholder="e.g., 45" />
+        <div class="hint">>40 = 10 pts; 25–40 = 7 pts; <25 = 4 pts.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div class="score-card">
+        <div class="total">
+          <div>
+            <h3>LONG100 Score</h3>
+            <div class="flex">
+              <span id="statusPill" class="pill">Status</span>
+              <span class="pill" id="datePill"></span>
+              <span class="pill" id="unitsPill"></span>
+            </div>
+          </div>
+          <div class="value" id="totalVal">0</div>
+        </div>
+        <div class="bar"><div id="barFill"></div></div>
+
+        <!-- Ad placeholder (below score) -->
+        <div class="ad" id="adBox">
+          <b>Ad space</b><br/>
+          Add your AdSense code here after approval.<br/>
+          <!-- Example responsive ad unit:
+          <ins class="adsbygoogle"
+              style="display:block"
+              data-ad-client="ca-pub-XXXXXXXXXXXXXXX"
+              data-ad-slot="YYYYYYYYYY"
+              data-ad-format="auto"
+              data-full-width-responsive="true"></ins>
+          <script>
+    // Configure this to your deployed connector domain (Vercel/Netlify)
+    const CONNECTOR_BASE = 'https://YOUR-CONNECTOR-DOMAIN';
+(adsbygoogle = window.adsbygoogle || []).push({{});</script>
+          -->
+        </div>
+
+        <div class="breakdown" id="breakdown"></div>
+
+        <div class="btn-group" style="margin-top:10px;">
+          <button class="btn" id="connectFitbitBtn">Connect Fitbit</button>
+          <button class="btn" id="connectGoogleFitBtn">Connect Google Fit</button>
+          <button class="btn" id="connectWhoopBtn">Connect WHOOP</button>
+          <button class="btn" id="connectPolarBtn">Connect Polar</button>
+          <button class="btn" id="connectGarminBtn">Connect Garmin</button>
+          <button class="btn" id="connectCorosBtn">Connect COROS</button>
+          <button class="btn" id="connectAppleBtn">Connect Apple (Shortcut)</button>
+          <button class="btn" id="installBtn" hidden>Install App</button>
+          <button class="btn" id="resetBtn">Reset</button>
+          <button class="btn" id="exportBtn">Export JSON</button>
+          <button class="btn" id="importBtn">Import JSON</button>
+          <a class="btn" href="spec.html" target="_blank">Schema</a>
+        </div>
+        <div class="hint">This tool summarizes wellness metrics for weekly reflection. Not medical advice.</div>
+        <div class="hint" id="appleHelp">Apple Health has no public web API. Use the Apple Shortcuts app to collect last‑7‑day stats and open LONG100 via a deep link. See <a href="spec.html#apple">schema docs</a>.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h2>Scoring Summary</h2>
+      <ul>
+        <li><b>RHR vs Baseline</b>: ≤ baseline+2 bpm = 10; +3–7 = 7; >+7 = 4. If no baseline, 50–60=10; 60–70=7; >70=4.</li>
+        <li><b>HRV vs Baseline</b>: ≥ baseline (±0–5%) = 10; -5–10% = 7; &lt;-10% = 4.</li>
+        <li><b>VO₂ Max percentile</b>: ≥75th:10; 25–74th:7; &lt;25th:4.</li>
+        <li><b>Load</b>: Productive:10; Maintaining:7; Overreaching/Detraining:4.</li>
+        <li><b>Steps</b>: ≥8000:10; 5000–7999:7; &lt;5000:4.</li>
+        <li><b>Intensity Minutes</b>: ≥150 mod / ≥75 vig:10; 75–149:7; &lt;75:4.</li>
+        <li><b>Sleep</b>: 7–8h:10; 6–6.9h:7; &lt;6h:4. <b>Deep %</b>: 15–25:10; 10–14.9:7; &lt;10:4.</li>
+        <li><b>Lifestyle category</b>: If Body Fat % present → Stress (10) + Body Fat (10). Else → Stress (10) + Body Battery (10).</li>
+        <li><b>Body Fat % thresholds</b>: Sex-aware bands (male: ≤18%=10, 18.1–24%=7, &gt;24%=4; female: ≤25%=10, 25.1–31%=7, &gt;31%=4).</li>
+      </ul>
+    </div>
+
+  </div>
+  <footer>
+    © 2025 Gabriel Purice. All rights reserved. LONG100™ is a trademark of Gabriel Purice. •
+    <a href="privacy.html">Privacy</a>
+  </footer>
+
+  <script>
+    // Configure this to your deployed connector domain (Vercel/Netlify)
+    const CONNECTOR_BASE = 'https://YOUR-CONNECTOR-DOMAIN';
+
+    // PWA install prompt
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+    window.addEventListener('beforeinstallprompt', (e) => {{ e.preventDefault(); deferredPrompt = e; installBtn.hidden = false; }});
+    installBtn?.addEventListener('click', async () => {{ installBtn.hidden = true; if (deferredPrompt) {{ deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; }} }});
+
+    // Register SW
+    if ('serviceWorker' in navigator) {{ window.addEventListener('load', () => {{ navigator.serviceWorker.register('./service-worker.js'); }}); }}
+
+    const $ = (id) => document.getElementById(id);
+    const inputs = ['brand','age','sex','rhr_base','hrv_base','units','rhr','hrv','vo2pct','load','steps','intmin','sleep','deep','weight','bodyfat','stress','battery'];
+    function saveState(){{ const obj={{}}; inputs.forEach(k=>obj[k]=$(k).value); localStorage.setItem('long100_state_v2', JSON.stringify(obj)); }}
+    function loadState(){{ const s=localStorage.getItem('long100_state_v2'); if(!s) return; try{{const o=JSON.parse(s); inputs.forEach(k=>{{ if(o[k]!==undefined) $(k).value=o[k]; }});}}catch(e){{}} }}
+    function clamp(n,min,max){{ return Math.min(Math.max(n,min),max); }}
+    function colorForScore(s){{ if(s>=90) return 'var(--good)'; if(s>=75) return 'var(--warn)'; if(s>=60) return '#f97316'; return 'var(--risk)'; }}
+    function labelForScore(s){{ if(s>=90) return 'Excellent'; if(s>=75) return 'Good'; if(s>=60) return 'At Risk'; return 'Needs Work'; }}
+
+    function points_rhr(rhr, base){{ if(!isNaN(base)&&base>0&&!isNaN(rhr)){{const d=rhr-base; if(d<=2) return 10; if(d<=7) return 7; return 4;}} if(isNaN(rhr)) return 0; if(rhr>=50&&rhr<=60) return 10; if(rhr>60&&rhr<=70) return 7; return 4; }}
+    function points_hrv(hrv, base){{ if(!isNaN(base)&&base>0&&!isNaN(hrv)){{const pct=((hrv-base)/base)*100; if(pct>=-5) return 10; if(pct>=-10) return 7; return 4;}} if(isNaN(hrv)) return 0; return 7; }}
+    function points_vo2pct(v){{ if(isNaN(v)) return 0; if(v>=75) return 10; if(v>=25) return 7; return 4; }}
+    function points_load(v){{ return v==='productive'?10:(v==='maintaining'?7:4); }}
+    function points_steps(v){{ if(isNaN(v)) return 0; if(v>=8000) return 10; if(v>=5000) return 7; return 4; }}
+    function points_intmin(v){{ if(isNaN(v)) return 0; if(v>=150) return 10; if(v>=75) return 7; return 4; }}
+    function points_sleep(v){{ if(isNaN(v)) return 0; if(v>=7&&v<=8) return 10; if(v>=6&&v<7) return 7; return 4; }}
+    function points_deep(v){{ if(isNaN(v)) return 0; if(v>=15&&v<=25) return 10; if(v>=10&&v<15) return 7; return 4; }}
+    function points_stress(v){{ if(isNaN(v)) return 0; if(v<35) return 10; if(v<50) return 7; return 4; }}
+    function points_battery(v){{ if(isNaN(v)) return 0; if(v>40) return 10; if(v>=25) return 7; return 4; }}
+    function points_bodyfat(pct, sex){{ if(isNaN(pct)) return 0; const male=sex==='male'; if(male){{ if(pct<=18) return 10; if(pct<=24) return 7; return 4; }} else {{ if(pct<=25) return 10; if(pct<=31) return 7; return 4; }} }}
+
+    function compute(){{
+      saveState();
+      const v={{ age:parseFloat($('age').value), sex:$('sex').value||'male', rhr_base:parseFloat($('rhr_base').value), hrv_base:parseFloat($('hrv_base').value),
+        units:$('units').value||'kg', rhr:parseFloat($('rhr').value), hrv:parseFloat($('hrv').value), vo2pct:parseFloat($('vo2pct').value),
+        load:$('load').value, steps:parseFloat($('steps').value), intmin:parseFloat($('intmin').value), sleep:parseFloat($('sleep').value),
+        deep:parseFloat($('deep').value), weight:parseFloat($('weight').value), bodyfat:parseFloat($('bodyfat').value),
+        stress:parseFloat($('stress').value), battery:parseFloat($('battery').value) }};
+
+      const useBodyComp = !isNaN(v.bodyfat);
+      const breakdown = [
+        {{ group:'Recovery & Baseline', items:[
+          {{name:'Resting HR vs baseline', pts: points_rhr(v.rhr, v.rhr_base)}},
+          {{name:'HRV vs baseline', pts: points_hrv(v.hrv, v.hrv_base)}},
+        ]}},
+        {{ group:'Cardiorespiratory Fitness', items:[
+          {{name:'VO₂ Max percentile', pts: points_vo2pct(v.vo2pct)}},
+          {{name:'Training Load', pts: points_load(v.load)}},
+        ]}},
+        {{ group:'Movement & Activity', items:[
+          {{name:'Steps/day', pts: points_steps(v.steps)}},
+          {{name:'Intensity Minutes', pts: points_intmin(v.intmin)}},
+        ]}},
+        {{ group:'Sleep & Recovery', items:[
+          {{name:'Sleep (hrs)', pts: points_sleep(v.sleep)}},
+          {{name:'Deep Sleep %', pts: points_deep(v.deep)}},
+        ]}},
+        useBodyComp ?
+        {{ group:'Lifestyle & Body-Comp', items:[
+          {{name:'Stress score', pts: points_stress(v.stress)}},
+          {{name:'Body Fat %', pts: points_bodyfat(v.bodyfat, v.sex)}},
+        ]}} :
+        {{ group:'Lifestyle & Stress', items:[
+          {{name:'Stress score', pts: points_stress(v.stress)}},
+          {{name:'Body Battery', pts: points_battery(v.battery)}},
+        ]}},
+      ];
+
+      let total=0; breakdown.forEach(b=>b.items.forEach(i=>total+=i.pts)); total= Math.min(Math.max(total,0),100);
+      $('totalVal').textContent = total.toFixed(0);
+      const label = (s=> s>=90?'Excellent': s>=75?'Good': s>=60?'At Risk':'Needs Work')(total);
+      const color = (s=> s>=90?'var(--good)': s>=75?'var(--warn)': s>=60?'#f97316':'var(--risk)')(total);
+      $('statusPill').textContent = label; $('statusPill').style.color=color; $('statusPill').style.borderColor=color;
+      $('barFill').style.width = total + '%'; $('barFill').style.background = color;
+
+      const bd=$('breakdown'); bd.innerHTML='';
+      breakdown.forEach(b=>{{ const sum=b.items.reduce((a,c)=>a+c.pts,0);
+        const el=document.createElement('div'); el.className='kpi';
+        el.innerHTML = `<h4>${{b.group}} <span class="k">(${{sum}}/20)</span></h4>` +
+          b.items.map(i=>`<div class="row" style="grid-template-columns:1fr auto;"><div>${{i.name}}</div><div>${{i.pts}} pts</div></div>`).join('');
+        bd.appendChild(el);
+      }});
+
+      const now = new Date();
+      $('datePill').textContent = now.toLocaleDateString(undefined, {{year:'numeric', month:'short', day:'numeric'}});
+      $('unitsPill').textContent = `Units: ${{v.units}}`;
+    }}
+
+    inputs.forEach(id=>{{ const el=$(id); el.addEventListener('input', compute); el.addEventListener('change', compute); }});
+    $('resetBtn').addEventListener('click', ()=>{{ inputs.forEach(k=>{{ if($(k).tagName==='SELECT') $(k).selectedIndex=0; else $(k).value=''; }}); localStorage.removeItem('long100_state_v2'); compute(); }});
+    $('exportBtn').addEventListener('click', ()=>{{ const obj={{}}; inputs.forEach(k=>obj[k]=$(k).value); obj.LONG100=$('totalVal').textContent;
+      const blob=new Blob([JSON.stringify(obj,null,2)],{{type:'application/json'}}); const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=`LONG100_${{new Date().toISOString().slice(0,10)}}.json`; a.click(); URL.revokeObjectURL(url); }});
+    $('connectFitbitBtn').addEventListener('click', () => {
+      const target = `${CONNECTOR_BASE}/api/fitbit/start?returnPath=/app/index.html`;
+      window.location.href = target;
+    });
+
+    $('importBtn').addEventListener('click', async () => {
+      const pick = document.createElement('input'); pick.type = 'file'; pick.accept = 'application/json';
+      pick.onchange = async (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        try {
+          const text = await file.text(); const obj = JSON.parse(text);
+          // Map universal L100 schema -> form fields
+          const map = {
+            brand:'brand', age:'age', sex:'sex', units:'units',
+            baselines:{ rhr:'rhr_base', hrv:'hrv_base' },
+            metrics:{ rhr:'rhr', hrv:'hrv', vo2pct:'vo2pct', training_load:'load', steps:'steps', intensity_minutes:'intmin', sleep_hours:'sleep', deep_sleep_pct:'deep', stress_score:'stress', body_battery:'battery', body_fat_pct:'bodyfat', weight:'weight' }
+          };
+          if (obj.brand) $('brand').value = obj.brand;
+          if (obj.age) $('age').value = obj.age;
+          if (obj.sex) $('sex').value = obj.sex;
+          if (obj.units) $('units').value = obj.units;
+          if (obj.baselines) { if (obj.baselines.rhr) $('rhr_base').value = obj.baselines.rhr; if (obj.baselines.hrv) $('hrv_base').value = obj.baselines.hrv; }
+          if (obj.metrics) {
+            const m = obj.metrics;
+            if (m.rhr!==undefined) $('rhr').value = m.rhr;
+            if (m.hrv!==undefined) $('hrv').value = m.hrv;
+            if (m.vo2pct!==undefined) $('vo2pct').value = m.vo2pct;
+            if (m.training_load) $('load').value = m.training_load; // expects 'productive' | 'maintaining' | 'other'
+            if (m.steps!==undefined) $('steps').value = m.steps;
+            if (m.intensity_minutes!==undefined) $('intmin').value = m.intensity_minutes;
+            if (m.sleep_hours!==undefined) $('sleep').value = m.sleep_hours;
+            if (m.deep_sleep_pct!==undefined) $('deep').value = m.deep_sleep_pct;
+            if (m.stress_score!==undefined) $('stress').value = m.stress_score;
+            if (m.body_battery!==undefined) $('battery').value = m.body_battery;
+            if (m.body_fat_pct!==undefined) $('bodyfat').value = m.body_fat_pct;
+            if (m.weight!==undefined) $('weight').value = m.weight;
+          }
+          compute();
+        } catch(err){ alert('Invalid JSON'); }
+      };
+      pick.click();
+    });
+
+    
+    // Deep-link import via ?data=BASE64(JSON)
+    function importFromDeepLink() {
+      const params = new URLSearchParams(location.search);
+      const b64 = params.get('data');
+      if (!b64) return;
+      try {
+        const jsonText = atob(decodeURIComponent(b64));
+        const obj = JSON.parse(jsonText);
+        // Apply brand, baselines, metrics if present
+        if (obj.brand) $('brand').value = obj.brand;
+        if (obj.age) $('age').value = obj.age;
+        if (obj.sex) $('sex').value = obj.sex;
+        if (obj.units) $('units').value = obj.units;
+        if (obj.baselines) {
+          if (obj.baselines.rhr !== undefined) $('rhr_base').value = obj.baselines.rhr;
+          if (obj.baselines.hrv !== undefined) $('hrv_base').value = obj.baselines.hrv;
+        }
+        if (obj.metrics) {
+          const m = obj.metrics;
+          if (m.rhr !== undefined) $('rhr').value = m.rhr;
+          if (m.hrv !== undefined) $('hrv').value = m.hrv;
+          if (m.vo2pct !== undefined) $('vo2pct').value = m.vo2pct;
+          if (m.training_load !== undefined) $('load').value = m.training_load;
+          if (m.steps !== undefined) $('steps').value = m.steps;
+          if (m.intensity_minutes !== undefined) $('intmin').value = m.intensity_minutes;
+          if (m.sleep_hours !== undefined) $('sleep').value = m.sleep_hours;
+          if (m.deep_sleep_pct !== undefined) $('deep').value = m.deep_sleep_pct;
+          if (m.stress_score !== undefined) $('stress').value = m.stress_score;
+          if (m.body_battery !== undefined) $('battery').value = m.body_battery;
+          if (m.body_fat_pct !== undefined) $('bodyfat').value = m.body_fat_pct;
+          if (m.weight !== undefined) $('weight').value = m.weight;
+        }
+      } catch (e) {
+        console.warn('Deep-link import failed', e);
+      }
+    }
+    
+    importFromDeepLink();
+    loadState(); compute();
+  </script>
+</body>
+</html>

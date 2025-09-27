@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LONG100 Universal Schema v1</title>
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:20px;line-height:1.6;color:#111} code{background:#f3f4f6;padding:2px 4px;border-radius:4px}</style>
+</head><body>
+<h1>LONG100 Universal Schema v1</h1>
+<p>This schema lets any device (Garmin, Apple Watch, Fitbit, Samsung, COROS, Polar, WHOOP, etc.) pass data into the LONG100 calculator.</p>
+
+<h2>JSON structure</h2>
+<pre><code>{
+  "brand": "garmin | apple | fitbit | samsung | coros | polar | whoop | other",
+  "age": 40,
+  "sex": "male | female | other",
+  "units": "kg | lb",
+  "baselines": {
+    "rhr": 56,        // Resting HR baseline (bpm)
+    "hrv": 70         // HRV baseline (ms), weekly avg typical
+  },
+  "metrics": {
+    "rhr": 58,                    // current resting HR (bpm)
+    "hrv": 68,                    // current HRV (ms, weekly avg)
+    "vo2pct": 76,                 // VO2 Max percentile for age/sex (0-100)
+    "training_load": "productive | maintaining | other",
+    "steps": 9000,                // avg steps/day
+    "intensity_minutes": 165,     // moderate mins/week or vigorous-equivalent
+    "sleep_hours": 7.4,           // avg hours
+    "deep_sleep_pct": 18,         // percent of total sleep
+    "stress_score": 30,           // daily avg stress
+    "body_battery": 45,           // end-of-day avg (if supported)
+    "body_fat_pct": 19,           // if using body composition instead of battery
+    "weight": 86                  // optional, used for info only
+  }
+}</code></pre>
+
+<h2>Brand field hints</h2>
+<ul>
+  <li><b>Garmin:</b> HRV (sleep), Body Battery, Training Load, VO2 estimate</li>
+  <li><b>Apple:</b> HRV (SDNN from Health), VO2 estimate (Cardio Fitness)</li>
+  <li><b>Fitbit:</b> Daily Readiness (not used directly), VO2 (Cardio Score), stress score</li>
+  <li><b>Samsung:</b> Stress index, VO2 estimate (running), sleep stages</li>
+  <li><b>COROS:</b> Training load/fitness index, VO2 estimate, sleep</li>
+  <li><b>Polar:</b> Nightly Recharge (proxy), VO2 estimate, training load</li>
+  <li><b>WHOOP:</b> Recovery %, HRV, sleep; map Recovery % to stress/body-battery proxy if desired</li>
+</ul>
+
+<p>Only fields available on a given device are needed. The calculator will scale the score to the metrics provided.</p>
+
+
+<h2>Deep-link import</h2>
+<p>You can pass data directly into LONG100 via a URL parameter. Build a JSON using the schema above, then:</p>
+<ol>
+  <li>Serialize to text</li>
+  <li>URL-encode it</li>
+  <li>Base64-encode the result</li>
+</ol>
+<p>Open <code>https://YOURDOMAIN/app/index.html?data=BASE64_ENCODED_JSON</code></p>
+<pre><code>// Example in JavaScript
+const payload = {
+  brand: "apple",
+  age: 38,
+  sex: "female",
+  units: "kg",
+  baselines: { rhr: 60, hrv: 65 },
+  metrics: { rhr: 61, hrv: 63, vo2pct: 72, steps: 8200, intensity_minutes: 155, sleep_hours: 7.2, deep_sleep_pct: 17, stress_score: 32 }
+};
+const url = 'https://long100.app/app/index.html?data=' + encodeURIComponent(btoa(JSON.stringify(payload)));
+// Open this URL to import the data automatically.</code></pre>
+
+
+<h2 id="apple">Apple Health (Shortcut approach)</h2>
+<p>Apple Health has no public web API for web apps. Use the <b>Shortcuts</b> app on iOS:</p>
+<ol>
+  <li>Create a Shortcut named <code>LONG100 Weekly</code>.</li>
+  <li>Use Health actions to get the last 7 days for: Resting Heart Rate, Steps, Sleep (hours & deep), HRV, etc.</li>
+  <li>Build the LONG100 JSON (see schema above), then Base64-encode it.</li>
+  <li>Open URL: <code>https://YOURDOMAIN/app/index.html?data=BASE64_JSON</code>.</li>
+</ol>
+<p>In the app, the button <b>Connect Apple (Shortcut)</b> will try to run that Shortcut via <code>shortcuts://</code>.</p>
+
+</body></html>
