@@ -415,7 +415,9 @@
 
   importFromDeepLink();
   loadState();
-  compute();           
+  compute();console.log('LONG100 script loaded');
+window.compute = compute; // lets us call compute() from console if needed
+
   </script>
 </body>
 </html>
