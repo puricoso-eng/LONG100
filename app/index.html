@@ -429,6 +429,50 @@
     
     importFromDeepLink();
     loadState(); compute();
-  </script>
+  </script><script>
+function num(v) {
+  const x = Number(v);
+  return isFinite(x) ? x : undefined;
+}
+
+function computeScore(values) {
+  // Simple weighting example — adjust as needed
+  let total = 0, weight = 0;
+  if (values.rhr) { total += (100 - values.rhr) * 0.2; weight += 0.2; }
+  if (values.hrv) { total += values.hrv * 0.2; weight += 0.2; }
+  if (values.steps) { total += (values.steps / 10000) * 100 * 0.2; weight += 0.2; }
+  if (values.sleep) { total += (values.sleep / 8) * 100 * 0.2; weight += 0.2; }
+  if (values.deep) { total += (values.deep / 20) * 100 * 0.2; weight += 0.2; }
+  return weight ? Math.round(total / weight) : null;
+}
+
+function readInputs() {
+  return {
+    rhr: num(document.getElementById('rhr')?.value),
+    hrv: num(document.getElementById('hrv')?.value),
+    steps: num(document.getElementById('steps')?.value),
+    sleep: num(document.getElementById('sleep_hours')?.value),
+    deep: num(document.getElementById('deep_sleep_pct')?.value),
+  };
+}
+
+function recalc() {
+  const vals = readInputs();
+  const score = computeScore(vals);
+  const el = document.getElementById('scoreValue');
+  if (el) el.textContent = score ?? '—';
+}
+
+// Bind auto-update
+document.addEventListener('DOMContentLoaded', () => {
+  ['rhr','hrv','steps','sleep_hours','deep_sleep_pct']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', recalc);
+    });
+  recalc();
+});
+</script>
+
 </body>
 </html>
