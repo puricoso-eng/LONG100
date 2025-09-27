@@ -315,7 +315,12 @@
   }
 
   // Auto-recalc on any input change
-  inputs.forEach(id => { const el = $(id); el.addEventListener('input', compute); el.addEventListener('change', compute); });
+  inputs.forEach(id => {
+  const el = $(id);
+  if (!el) { console.warn('Missing input id:', id); return; }   // prevents crash
+  el.addEventListener('input', compute);
+  el.addEventListener('change', compute);
+});; el.addEventListener('change', compute); });
 
   // Reset/export/import
   $('resetBtn').addEventListener('click', () => { inputs.forEach(k => { if ($(k).tagName === 'SELECT') $(k).selectedIndex = 0; else $(k).value = ''; }); localStorage.removeItem('long100_state_v2'); compute(); });
