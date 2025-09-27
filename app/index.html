@@ -315,8 +315,17 @@
     const el = $(id);
     if (!el) { console.warn('[LONG100] Missing input id:', id); return; }
     el.addEventListener('input', window.compute);
-    el.addEventListener('change', window.compute);
-  });
+    // Auto-recalc on any input change
+inputs.forEach(id => {
+  const el = $(id);
+  if (!el) { 
+    console.warn('Missing input id:', id); 
+    return; 
+  }
+  el.addEventListener('input', compute);
+  el.addEventListener('change', compute);
+});
+
 
   // Buttons
   $('connectFitbitBtn')?.addEventListener('click', () => {
